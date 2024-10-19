@@ -252,6 +252,142 @@ def delete_processed_ingredient(id):
     db.session.delete(ingredient)
     db.session.commit()
     return jsonify({'message': 'Processed ingredient deleted'}), 20
+#Recipe
+@app.route('/recipes', methods=['POST'])
+def create_recipe():
+    data = request.get_json()
+    if not data:
+        return jsonify({'message': 'No input data provided'}), 400
+
+    name = data.get('name')
+    type_ = data.get('type')
+    restaurant_id = data.get('restaurant_id')
+
+    # Check if the required fields are provided
+    if not all([name, type_]):
+        return jsonify({'message': 'Missing required fields'}), 400
+
+    # Check for duplicate recipe names
+    if Recipe.query.filter_by(name=name).first():
+        return jsonify({'message': 'Recipe already exists'}), 400
+
+    recipe = Recipe(
+        name=name,
+        type=type_,
+        restaurant_id=restaurant_id
+    )
+
+    db.session.add(recipe)
+    db.session.commit()
+
+    return jsonify({'message': 'Recipe created', 'id': recipe.id}), 201
+
+@app.route('/recipes', methods=['GET'])
+def get_recipes():
+    recipes = Recipe.query.all()
+    recipe_list = [{'id': recipe.id, 'name': recipe.name, 'type': recipe.type} for recipe in recipes]
+    
+    return jsonify(recipe_list), 200
+
+@app.route('/recipes/<int:recipe_id>', methods=['PUT'])
+def update_recipe(recipe_id):
+    data = request.get_json()
+    recipe = Recipe.query.get(recipe_id)
+
+    if recipe is None:
+        return jsonify({'message': 'Recipe not found'}), 404
+
+    name = data.get('name', recipe.name)
+    type_ = data.get('type', recipe.type)
+    restaurant_id = data.get('restaurant_id', recipe.restaurant_id)
+
+    recipe.name = name
+    recipe.type = type_
+    recipe.restaurant_id = restaurant_id
+
+    db.session.commit()
+
+    return jsonify({'message': 'Recipe updated', 'id': recipe.id}), 200
+
+@app.route('/recipes/<int:recipe_id>', methods=['DELETE'])
+def delete_recipe(recipe_id):
+    recipe = Recipe.query.get(recipe_id)
+
+    if recipe is None:
+        return jsonify({'message': 'Recipe not found'}), 404
+
+    db.session.delete(recipe)
+    db.session.commit()
+
+    return jsonify({'message': 'Recipe deleted'}), 200
+#Restaurants
+@app.route('/restaurants', methods=['POST'])
+def create_restaurant():
+    data = request.get_json()
+    if not data:
+        return jsonify({'message': 'No input data provided'}), 400
+
+    name = data.get('name')
+    address = data.get('address')
+    phone = data.get('phone')
+
+    # Check if the required fields are provided
+    if not name:
+        return jsonify({'message': 'Missing required fields'}), 400
+
+    # Check for duplicate restaurant names
+    if Restaurant.query.filter_by(name=name).first():
+        return jsonify({'message': 'Restaurant already exists'}), 400
+
+    restaurant = Restaurant(
+        name=name,
+        address=address,
+        phone=phone
+    )
+
+    db.session.add(restaurant)
+    db.session.commit()
+
+    return jsonify({'message': 'Restaurant created', 'id': restaurant.id}), 201
+
+@app.route('/restaurants', methods=['GET'])
+def get_restaurants():
+    restaurants = Restaurant.query.all()
+    restaurant_list = [{'id': restaurant.id, 'name': restaurant.name, 'address': restaurant.address, 'phone': restaurant.phone} for restaurant in restaurants]
+    
+    return jsonify(restaurant_list), 200
+
+@app.route('/restaurants/<int:restaurant_id>', methods=['PUT'])
+def update_restaurant(restaurant_id):
+    data = request.get_json()
+    restaurant = Restaurant.query.get(restaurant_id)
+
+    if restaurant is None:
+        return jsonify({'message': 'Restaurant not found'}), 404
+
+    name = data.get('name', restaurant.name)
+    address = data.get('address', restaurant.address)
+    phone = data.get('phone', restaurant.phone)
+
+    restaurant.name = name
+    restaurant.address = address
+    restaurant.phone = phone
+
+    db.session.commit()
+
+    return jsonify({'message': 'Restaurant updated', 'id': restaurant.id}), 200
+
+@app.route('/restaurants/<int:restaurant_id>', methods=['DELETE'])
+def delete_restaurant(restaurant_id):
+    restaurant = Restaurant.query.get(restaurant_id)
+
+    if restaurant is None:
+        return jsonify({'message': 'Restaurant not found'}), 404
+
+    db.session.delete(restaurant)
+    db.session.commit()
+
+    return jsonify({'message': 'Restaurant deleted'}), 200
 
 # Users
 # GET /users/<int:id> - Retrieve a specific user by ID
