@@ -5,9 +5,55 @@ from app.models import (
 )
 from datetime import datetime, timedelta
 import random
+import requests
+import json
 
+
+BASE_URL = "http://127.0.0.1:5000"
 # Create the Flask app
 app = create_app()
+test_data = {
+    "raw_ingredients": {
+        "name": "Tomato",
+        "unit": "kg",
+        "categories": "vegetables, fruits"
+    },
+    "stocks": {
+        "name": "Tomato Stock",
+        "purchase_date": datetime.utcnow().isoformat(),
+        "expiry_date": (datetime.utcnow() + timedelta(days=7)).isoformat(),
+        "cost": 2.5,
+        "quantity_id": 1,
+        "raw_ingredient_id": 1
+    },
+    "processed_ingredients": {
+        "name": "Tomato Sauce",
+        "expiry_date": (datetime.utcnow() + timedelta(days=30)).isoformat(),
+        "cost": 3.0
+    },
+    "recipes": {
+        "name": "Tomato Pasta",
+        "type": "Full Recipe",
+        "restaurant_id": 1
+    },
+    "restaurants": {
+        "name": "Italian Bistro",
+        "address": "123 Pasta St.",
+        "phone": "123-456-7890"
+    },
+    "users": {
+        "login_id": "chef123",
+        "password": "securepassword",
+        "name": "Chef Mario",
+        "role": "Chef"
+    },
+    "events": {
+        "name": "Pasta Night",
+        "time": (datetime.utcnow() + timedelta(days=1)).isoformat(),
+        "restaurant_id": 1,
+        "created_by_id": 1
+    }
+}
 
 # Sample data
 raw_ingredients = [
@@ -93,3 +139,51 @@ with app.app_context():
     db.session.commit()
 
 print("Database populated successfully!")
+def test_route(method, endpoint, data=None):
+    url = f"{BASE_URL}/{endpoint}"
+    try:
+        if method == 'GET':
+            response = requests.get(url)
+        elif method == 'POST':
+            response = requests.post(url, json=data)
+        elif method == 'PUT':
+            response = requests.put(url, json=data)
+        elif method == 'DELETE':
+            response = requests.delete(url)
+
+        print(f"{method} {url} - Status Code: {response.status_code}")
+        if response.status_code in [200, 201]:
+            print("Response:", response.json())
+        else:
+            print("Error:", response.json())
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+
+# Test Raw Ingredients
+test_route('POST', 'raw_ingredients', test_data['raw_ingredients'])
+test_route('GET', 'raw_ingredients')
+
+# Test Stocks
+test_route('POST', 'stocks', test_data['stocks'])
+test_route('GET', 'stocks')
+
+# Test Processed Ingredients
+test_route('POST', 'processed_ingredients', test_data['processed_ingredients'])
+test_route('GET', 'processed_ingredients')
+
+# Test Recipes
+test_route('POST', 'recipes', test_data['recipes'])
+test_route('GET', 'recipes')
+
+# Test Restaurants
+test_route('POST', 'restaurants', test_data['restaurants'])
+test_route('GET', 'restaurants')
+
+# Test Users
+test_route('POST', 'users', test_data['users'])
+test_route('GET', 'users')
+
+# Test Events
+test_route('POST', 'events', test_data['events'])
+test_route('GET', 'events')
+print("Database routes test successful")
