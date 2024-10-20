@@ -119,7 +119,7 @@ def execute_full_recipe():
         recipe_id=recipe_id,
         quantity=quantity_to_prepare,
         sale_price=sale_price,
-        restaurant_id=recipe.restaurant_id
+        restaurant_id=1
     )
     db.session.add(sale)
     db.session.commit()

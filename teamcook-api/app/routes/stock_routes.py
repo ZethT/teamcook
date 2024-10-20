@@ -2,8 +2,9 @@
 
 from flask import Blueprint, request, jsonify
 from app import db
-from app.models import Stock, Ingredient
+from app.models import Stock, Ingredient, Waste, Sales, Recipe, Event, RecipeIngredient
 from datetime import datetime
+from sqlalchemy import func, desc
 
 stock_bp = Blueprint('stock_bp', __name__, url_prefix='/stocks')
 
@@ -12,6 +13,7 @@ def get_stocks():
     stocks = Stock.query.all()
     result = []
     for stock in stocks:
+        ingredient = Ingredient.query.get(stock.ingredient_id)
         stock_data = {
             'id': stock.id,
             'name': stock.name,
@@ -20,7 +22,8 @@ def get_stocks():
             'cost': stock.cost,
             'amount': stock.amount,
             'unit': stock.unit,
-            'ingredient_id': stock.ingredient_id
+            'ingredient_id': stock.ingredient_id,
+            'ingredient_name': ingredient.name  # Add ingredient_name
         }
         result.append(stock_data)
     return jsonify(result), 200
@@ -137,3 +140,133 @@ def delete_stock(id):
     db.session.delete(stock)
     db.session.commit()
     return jsonify({'message': 'Stock deleted'}), 200
+
+
+
+@stock_bp.route('/grouped', methods=['GET'])
+def get_grouped_stocks():
+    try:
+        # Perform a join between Stock and Ingredient to get ingredient details
+        grouped_stocks = (
+            db.session.query(
+                Ingredient.id.label('ingredient_id'),
+                Ingredient.name.label('ingredient_name'),
+                func.sum(Stock.amount).label('total_amount'),
+                Stock.unit.label('unit')  # Assuming unit is consistent per ingredient
+            )
+            .join(Ingredient, Stock.ingredient_id == Ingredient.id)
+            .group_by(Ingredient.id, Ingredient.name, Stock.unit)
+            .all()
+        )
+
+        # Convert the result to a list of dictionaries
+        result = []
+        for stock in grouped_stocks:
+            result.append({
+                'ingredient_id': stock.ingredient_id,
+                'ingredient_name': stock.ingredient_name,
+                'total_amount': stock.total_amount,
+                'unit': stock.unit
+            })
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        # Log the exception if you have a logging system
+        print(f"Error in get_grouped_stocks: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
+    
+
+@stock_bp.route('/log/<string:ingredient_name>', methods=['GET'])
+def get_stock_log(ingredient_name):
+    try:
+        # Get the ingredient
+        ingredient = Ingredient.query.filter_by(name=ingredient_name).first_or_404()
+
+        # Fetch stock creations
+        stock_creations = (
+            Stock.query
+            .filter_by(ingredient_id=ingredient.id)
+            .order_by(desc(Stock.purchase_date))
+            .all()
+        )
+
+        # Fetch processed recipe executions (consumptions)
+        processed_executions = (
+            Event.query
+            .filter(Event.name.like(f"Processed Recipe:%"))
+            .order_by(desc(Event.time))
+            .all()
+        )
+
+        # Fetch full recipe executions (consumptions)
+        full_executions = (
+            Sales.query
+            .join(Recipe, Sales.recipe_id == Recipe.id)
+            .join(RecipeIngredient, RecipeIngredient.recipe_id == Recipe.id)
+            .filter(RecipeIngredient.ingredient_id == ingredient.id)
+            .order_by(desc(Sales.sale_date))
+            .all()
+        )
+
+        # Fetch waste entries
+        wastes = (
+            Waste.query
+            .join(Stock, Waste.stock_id == Stock.id)
+            .filter(Stock.ingredient_id == ingredient.id)
+            .order_by(desc(Waste.waste_date))
+            .all()
+        )
+
+        # Combine and sort all entries
+        log_entries = []
+
+        for creation in stock_creations:
+            log_entries.append({
+                'type': 'Stock Added',
+                'date': creation.purchase_date.isoformat(),
+                'amount': creation.amount,
+                'unit': creation.unit
+            })
+
+        for execution in processed_executions:
+            # Parse the event name to get recipe details
+            _, recipe_name, amount, unit = execution.name.split(':')
+            if ingredient_name in recipe_name:
+                log_entries.append({
+                    'type': 'Consumed (Processed Recipe)',
+                    'date': execution.time.isoformat(),
+                    'amount': float(amount),
+                    'unit': unit.strip(),
+                    'details': f"Used in {recipe_name.strip()}"
+                })
+
+        for sale in full_executions:
+            recipe_ingredient = RecipeIngredient.query.filter_by(recipe_id=sale.recipe_id, ingredient_id=ingredient.id).first()
+            if recipe_ingredient:
+                consumed_amount = recipe_ingredient.required_amount * sale.quantity
+                log_entries.append({
+                    'type': 'Consumed (Full Recipe)',
+                    'date': sale.sale_date.isoformat(),
+                    'amount': consumed_amount,
+                    'unit': recipe_ingredient.unit,
+                    'details': f"Used in {sale.recipe.name}"
+                })
+
+        for waste in wastes:
+            log_entries.append({
+                'type': 'Expired/Wasted',
+                'date': waste.waste_date.isoformat(),
+                'amount': waste.waste_amount,
+                'unit': waste.unit,
+                'reason': waste.reason
+            })
+
+        # Sort all entries by date, most recent first
+        log_entries.sort(key=lambda x: x['date'], reverse=True)
+
+        return jsonify(log_entries), 200
+
+    except Exception as e:
+        print(f"Error in get_stock_log: {e}")
+        return jsonify({'message': 'Internal Server Error'}), 500
