@@ -2,7 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from app import db
-from app.models import Recipe, Restaurant
+from app.models import Recipe, Restaurant, RecipeIngredient, RecipeStep, Ingredient
 
 recipe_bp = Blueprint('recipe_bp', __name__, url_prefix='/recipes')
 
@@ -24,12 +24,30 @@ def get_recipes():
 @recipe_bp.route('/<int:id>', methods=['GET'])
 def get_recipe(id):
     recipe = Recipe.query.get_or_404(id)
+    recipe_ingredients = RecipeIngredient.query.filter_by(recipe_id=id).all()
+    recipe_steps = RecipeStep.query.filter_by(recipe_id=id).order_by(RecipeStep.step_number).all()
+
+    ingredients_data = []
+    for ri in recipe_ingredients:
+        ingredient = Ingredient.query.get(ri.ingredient_id)
+        ingredients_data.append({
+            'id': ingredient.id,
+            'name': ingredient.name,
+            'type': ingredient.type,
+            'required_amount': ri.required_amount,
+            'unit': ri.unit
+        })
+
+    steps_data = [{'step_number': rs.step_number, 'instruction': rs.instruction} for rs in recipe_steps]
+
     recipe_data = {
         'id': recipe.id,
         'name': recipe.name,
         'type': recipe.type,
         'creation_time': recipe.creation_time.isoformat(),
-        'restaurant_id': recipe.restaurant_id
+        'restaurant_id': recipe.restaurant_id,
+        'ingredients': ingredients_data,
+        'steps': steps_data
     }
     return jsonify(recipe_data), 200
 
@@ -42,6 +60,8 @@ def create_recipe():
     name = data.get('name')
     type_ = data.get('type')  # 'Processed' or 'Full Recipe'
     restaurant_id = data.get('restaurant_id')
+    ingredients = data.get('ingredients', [])
+    steps = data.get('steps', [])
 
     if not all([name, type_]):
         return jsonify({'message': 'Missing required fields'}), 400
@@ -63,6 +83,27 @@ def create_recipe():
         restaurant_id=restaurant_id
     )
     db.session.add(recipe)
+    db.session.flush()  # This assigns an id to the recipe
+
+    # Add ingredients
+    for ingredient_data in ingredients:
+        new_ingredient = RecipeIngredient(
+            recipe_id=recipe.id,
+            ingredient_id=ingredient_data['id'],
+            required_amount=ingredient_data['required_amount'],
+            unit=ingredient_data['unit']
+        )
+        db.session.add(new_ingredient)
+
+    # Add steps
+    for step_data in steps:
+        new_step = RecipeStep(
+            recipe_id=recipe.id,
+            step_number=step_data['step_number'],
+            instruction=step_data['instruction']
+        )
+        db.session.add(new_step)
+
     db.session.commit()
     return jsonify({'message': 'Recipe created', 'id': recipe.id}), 201
 
@@ -73,24 +114,30 @@ def update_recipe(id):
     if not data:
         return jsonify({'message': 'No input data provided'}), 400
 
-    name = data.get('name', recipe.name)
-    type_ = data.get('type', recipe.type)
-    restaurant_id = data.get('restaurant_id', recipe.restaurant_id)
+    recipe.name = data.get('name', recipe.name)
+    recipe.type = data.get('type', recipe.type)
+    recipe.restaurant_id = data.get('restaurant_id', recipe.restaurant_id)
 
-    if type_ not in ['Processed', 'Full Recipe']:
-        return jsonify({'message': "Type must be 'Processed' or 'Full Recipe'"}), 400
+    # Update ingredients
+    RecipeIngredient.query.filter_by(recipe_id=id).delete()
+    for ingredient_data in data.get('ingredients', []):
+        new_ingredient = RecipeIngredient(
+            recipe_id=id,
+            ingredient_id=ingredient_data['id'],
+            required_amount=ingredient_data['required_amount'],
+            unit=ingredient_data['unit']
+        )
+        db.session.add(new_ingredient)
 
-    if name != recipe.name and Recipe.query.filter_by(name=name).first():
-        return jsonify({'message': 'Recipe with this name already exists'}), 400
-
-    if restaurant_id:
-        restaurant = Restaurant.query.get(restaurant_id)
-        if not restaurant:
-            return jsonify({'message': 'Restaurant not found'}), 404
-
-    recipe.name = name
-    recipe.type = type_
-    recipe.restaurant_id = restaurant_id
+    # Update steps
+    RecipeStep.query.filter_by(recipe_id=id).delete()
+    for step_data in data.get('steps', []):
+        new_step = RecipeStep(
+            recipe_id=id,
+            step_number=step_data['step_number'],
+            instruction=step_data['instruction']
+        )
+        db.session.add(new_step)
 
     db.session.commit()
     return jsonify({'message': 'Recipe updated'}), 200
