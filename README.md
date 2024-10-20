@@ -1,6 +1,6 @@
-# COOKING-MAMA: Kitchen Inventory Management System
+# TeamCook: Kitchen Inventory Management System
 
-COOKING-MAMA is a web application developed during a hackathon to address the challenges faced by kitchen teams in the food industry. It aims to streamline inventory management, improve team communication, and optimize budgeting for restaurants and professional kitchens.
+TeamCook is a web application developed during a hackathon to address the challenges faced by kitchen teams in the food industry. It aims to streamline inventory management, improve team communication, and optimize budgeting for restaurants and professional kitchens.
 
 ## Important: Read the Project Documentation
 
