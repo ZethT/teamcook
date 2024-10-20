@@ -8,6 +8,7 @@ const Budget = React.lazy(() => import('./budget/Budget'))
 const Calendar = React.lazy(() => import('./calendar/Calendar'))
 const Team = React.lazy(() => import('./team/Team'))
 const Testing = React.lazy(() => import('./testing/Testing'))
+const IngredientMangement = React.lazy(() => import('./ingredientMangement/IngredientMangement'))
 
 const routes = [
   { path: '/', exact: true, name: 'Home' },
@@ -20,6 +21,7 @@ const routes = [
   { path: '/calendar', name: 'Calendar', element: Calendar },
   { path: '/team', name: 'Team', element: Team },
   { path: '/testing', name: 'Testing', element: Testing },
+  { path: '/ingredientMangement', name: 'Ingredient Mangement', element: IngredientMangement },
 ]
 
 export default routes
