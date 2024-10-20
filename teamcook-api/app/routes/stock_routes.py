@@ -5,10 +5,13 @@ from app import db
 from app.models import Stock, Ingredient, Waste, Sales, Recipe, Event, RecipeIngredient
 from datetime import datetime
 from sqlalchemy import func, desc
+from flask_cors import cross_origin
+
 
 stock_bp = Blueprint('stock_bp', __name__, url_prefix='/stocks')
 
 @stock_bp.route('/', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_stocks():
     stocks = Stock.query.all()
     result = []
@@ -29,6 +32,7 @@ def get_stocks():
     return jsonify(result), 200
 
 @stock_bp.route('/<int:id>', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_stock(id):
     stock = Stock.query.get_or_404(id)
     stock_data = {
@@ -44,6 +48,7 @@ def get_stock(id):
     return jsonify(stock_data), 200
 
 @stock_bp.route('/', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def create_stock():
     data = request.get_json()
     if not data:
@@ -103,6 +108,7 @@ def create_stock():
     return jsonify({'message': 'Stock created', 'id': stock.id}), 201
 
 @stock_bp.route('/<int:id>', methods=['PUT'])
+@cross_origin(supports_credentials=True)
 def update_stock(id):
     stock = Stock.query.get_or_404(id)
     data = request.get_json()
@@ -135,6 +141,7 @@ def update_stock(id):
     return jsonify({'message': 'Stock updated'}), 200
 
 @stock_bp.route('/<int:id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
 def delete_stock(id):
     stock = Stock.query.get_or_404(id)
     db.session.delete(stock)
@@ -144,6 +151,7 @@ def delete_stock(id):
 
 
 @stock_bp.route('/grouped', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_grouped_stocks():
     try:
         # Perform a join between Stock and Ingredient to get ingredient details
@@ -178,6 +186,7 @@ def get_grouped_stocks():
     
 
 @stock_bp.route('/log/<string:ingredient_name>', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_stock_log(ingredient_name):
     try:
         # Get the ingredient

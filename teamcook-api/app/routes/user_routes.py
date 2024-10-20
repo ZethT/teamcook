@@ -3,10 +3,12 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models import User
+from flask_cors import cross_origin
 
 user_bp = Blueprint('user_bp', __name__, url_prefix='/users')
 
 @user_bp.route('/', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_users():
     users = User.query.all()
     result = []
@@ -21,6 +23,7 @@ def get_users():
     return jsonify(result), 200
 
 @user_bp.route('/<int:id>', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_user(id):
     user = User.query.get_or_404(id)
     user_data = {
@@ -32,6 +35,7 @@ def get_user(id):
     return jsonify(user_data), 200
 
 @user_bp.route('/', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def create_user():
     data = request.get_json()
     if not data:
@@ -59,6 +63,7 @@ def create_user():
     return jsonify({'message': 'User created', 'id': user.id}), 201
 
 @user_bp.route('/<int:id>', methods=['PUT'])
+@cross_origin(supports_credentials=True)
 def update_user(id):
     user = User.query.get_or_404(id)
     data = request.get_json()
@@ -84,6 +89,7 @@ def update_user(id):
     return jsonify({'message': 'User updated'}), 200
 
 @user_bp.route('/<int:id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
 def delete_user(id):
     user = User.query.get_or_404(id)
     db.session.delete(user)

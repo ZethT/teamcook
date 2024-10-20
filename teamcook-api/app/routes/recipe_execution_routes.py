@@ -5,10 +5,13 @@ from app import db
 from app.models import Recipe, RecipeIngredient, Stock, Ingredient, Sales
 from app.utils import allocate_stock
 from datetime import datetime, timedelta
+from flask_cors import cross_origin
+
 
 recipe_execution_bp = Blueprint('recipe_execution_bp', __name__)
 
 @recipe_execution_bp.route('/execute_processed_recipe', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def execute_processed_recipe():
     data = request.get_json()
     if not data:
@@ -82,6 +85,7 @@ def execute_processed_recipe():
     return jsonify({'message': 'Processed recipe executed', 'processed_stock_id': processed_stock.id}), 200
 
 @recipe_execution_bp.route('/execute_full_recipe', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def execute_full_recipe():
     data = request.get_json()
     if not data:

@@ -3,10 +3,12 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Recipe, Restaurant, RecipeIngredient, RecipeStep, Ingredient
+from flask_cors import cross_origin
 
 recipe_bp = Blueprint('recipe_bp', __name__, url_prefix='/recipes')
 
 @recipe_bp.route('/', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_recipes():
     recipes = Recipe.query.all()
     result = []
@@ -22,6 +24,7 @@ def get_recipes():
     return jsonify(result), 200
 
 @recipe_bp.route('/<int:id>', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_recipe(id):
     recipe = Recipe.query.get_or_404(id)
     recipe_ingredients = RecipeIngredient.query.filter_by(recipe_id=id).all()
@@ -52,6 +55,7 @@ def get_recipe(id):
     return jsonify(recipe_data), 200
 
 @recipe_bp.route('/', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def create_recipe():
     data = request.get_json()
     if not data:
@@ -108,6 +112,7 @@ def create_recipe():
     return jsonify({'message': 'Recipe created', 'id': recipe.id}), 201
 
 @recipe_bp.route('/<int:id>', methods=['PUT'])
+@cross_origin(supports_credentials=True)
 def update_recipe(id):
     recipe = Recipe.query.get_or_404(id)
     data = request.get_json()
@@ -143,6 +148,7 @@ def update_recipe(id):
     return jsonify({'message': 'Recipe updated'}), 200
 
 @recipe_bp.route('/<int:id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
 def delete_recipe(id):
     recipe = Recipe.query.get_or_404(id)
     db.session.delete(recipe)

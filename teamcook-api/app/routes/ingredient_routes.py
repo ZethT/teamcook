@@ -3,10 +3,13 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Ingredient
+from flask_cors import cross_origin
+
 
 ingredient_bp = Blueprint('ingredient_bp', __name__, url_prefix='/ingredients')
 
 @ingredient_bp.route('/', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_ingredients():
     ingredients = Ingredient.query.all()
     result = []
@@ -22,6 +25,7 @@ def get_ingredients():
     return jsonify(result), 200
 
 @ingredient_bp.route('/<int:id>', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_ingredient(id):
     ingredient = Ingredient.query.get_or_404(id)
     ingredient_data = {
@@ -34,6 +38,7 @@ def get_ingredient(id):
     return jsonify(ingredient_data), 200
 
 @ingredient_bp.route('/', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def create_ingredient():
     data = request.get_json()
     if not data:
@@ -64,6 +69,7 @@ def create_ingredient():
     return jsonify({'message': 'Ingredient created', 'id': ingredient.id}), 201
 
 @ingredient_bp.route('/<int:id>', methods=['PUT'])
+@cross_origin(supports_credentials=True)
 def update_ingredient(id):
     ingredient = Ingredient.query.get_or_404(id)
     data = request.get_json()
@@ -90,6 +96,7 @@ def update_ingredient(id):
     return jsonify({'message': 'Ingredient updated'}), 200
 
 @ingredient_bp.route('/<int:id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
 def delete_ingredient(id):
     ingredient = Ingredient.query.get_or_404(id)
     db.session.delete(ingredient)

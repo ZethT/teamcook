@@ -1,6 +1,8 @@
 # app/routes/event_routes.py
 
 from flask import Blueprint, request, jsonify
+from flask_cors import cross_origin
+
 from app import db
 from app.models import Event, User, Restaurant
 from datetime import datetime
@@ -8,6 +10,7 @@ from datetime import datetime
 event_bp = Blueprint('event_bp', __name__, url_prefix='/events')
 
 @event_bp.route('/', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_events():
     events = Event.query.all()
     result = []
@@ -23,6 +26,7 @@ def get_events():
     return jsonify(result), 200
 
 @event_bp.route('/<int:id>', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_event(id):
     event = Event.query.get_or_404(id)
     event_data = {
@@ -35,6 +39,7 @@ def get_event(id):
     return jsonify(event_data), 200
 
 @event_bp.route('/', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def create_event():
     data = request.get_json()
     if not data:
@@ -74,6 +79,7 @@ def create_event():
     return jsonify({'message': 'Event created', 'id': event.id}), 201
 
 @event_bp.route('/<int:id>', methods=['PUT'])
+@cross_origin(supports_credentials=True)
 def update_event(id):
     event = Event.query.get_or_404(id)
     data = request.get_json()
@@ -110,6 +116,7 @@ def update_event(id):
     return jsonify({'message': 'Event updated'}), 200
 
 @event_bp.route('/<int:id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
 def delete_event(id):
     event = Event.query.get_or_404(id)
     db.session.delete(event)

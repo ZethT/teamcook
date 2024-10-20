@@ -3,10 +3,13 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Restaurant
+from flask_cors import cross_origin
+
 
 restaurant_bp = Blueprint('restaurant_bp', __name__, url_prefix='/restaurants')
 
 @restaurant_bp.route('/', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_restaurants():
     restaurants = Restaurant.query.all()
     result = []
@@ -21,6 +24,7 @@ def get_restaurants():
     return jsonify(result), 200
 
 @restaurant_bp.route('/<int:id>', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_restaurant(id):
     restaurant = Restaurant.query.get_or_404(id)
     restaurant_data = {
@@ -32,6 +36,7 @@ def get_restaurant(id):
     return jsonify(restaurant_data), 200
 
 @restaurant_bp.route('/', methods=['POST'])
+@cross_origin(supports_credentials=True)
 def create_restaurant():
     data = request.get_json()
     if not data:
@@ -57,6 +62,7 @@ def create_restaurant():
     return jsonify({'message': 'Restaurant created', 'id': restaurant.id}), 201
 
 @restaurant_bp.route('/<int:id>', methods=['PUT'])
+@cross_origin(supports_credentials=True)
 def update_restaurant(id):
     restaurant = Restaurant.query.get_or_404(id)
     data = request.get_json()
@@ -78,6 +84,7 @@ def update_restaurant(id):
     return jsonify({'message': 'Restaurant updated'}), 200
 
 @restaurant_bp.route('/<int:id>', methods=['DELETE'])
+@cross_origin(supports_credentials=True)
 def delete_restaurant(id):
     restaurant = Restaurant.query.get_or_404(id)
     db.session.delete(restaurant)
