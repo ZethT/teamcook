@@ -1,6 +1,7 @@
 # app/routes/stats_routes.py
 
 from flask import Blueprint, jsonify
+from flask_cors import cross_origin
 from app import db
 from app.models import Stock, Ingredient
 from datetime import datetime, timedelta
@@ -8,6 +9,7 @@ from datetime import datetime, timedelta
 stats_bp = Blueprint('stats_bp', __name__, url_prefix='/stats')
 
 @stats_bp.route('/stock_counts', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_stock_counts():
     raw_ingredients = db.session.query(Ingredient.id).filter_by(type='Raw').subquery()
     processed_ingredients = db.session.query(Ingredient.id).filter_by(type='Processed').subquery()
@@ -21,6 +23,7 @@ def get_stock_counts():
     }), 200
 
 @stats_bp.route('/stock_history', methods=['GET'])
+@cross_origin(supports_credentials=True)
 def get_stock_history():
     today = datetime.utcnow().date()
     dates = [(today - timedelta(days=i)) for i in range(6, -1, -1)]  # Last 7 days
