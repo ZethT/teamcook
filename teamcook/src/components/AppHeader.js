@@ -51,9 +51,7 @@ const AppHeader = () => {
         >
           <CIcon icon={cilMenu} size="lg" />
         </CHeaderToggler>
-        <CHeaderNav className="d-none d-md-flex">
-          Teamcook
-        </CHeaderNav>
+        <CHeaderNav className="d-none d-md-flex">Teamcook</CHeaderNav>
         <CHeaderNav className="ms-auto">
           <CNavItem>
             <CNavLink href="#">
